@@ -42,8 +42,11 @@ void setup() {
 }
 
 int ds = 10;
-int xp = 0;
-int yp = 0;
+float xp = 0;
+float yp = 0;
+int xpint = 0;
+int ypint = 0;
+
 bool manual = 0;
 
 
@@ -52,15 +55,23 @@ bool rdX = 0;
 bool reading_num = 0;
 
 String buff = "";
-uint16_t xarr[16384/2] = { 0 };
-uint16_t yarr[16384/2] = { 0 };
+int xarr[16384/2] = { 0 };
+int yarr[16384/2] = { 0 };
 int xctr = 0, yctr = 0;
 int arrctr = 0;
 
 
 
+int digitsProcd = 0;
 void loop() {
   while (Serial.available() > 0) {
+    
+    for(int i = 0 ; i < 10; i++){
+      Serial.println(">>>>>");
+    }
+    Serial.print(">>>>> >>>>> RENTER SERiAL AVAIL with arrctr");
+    Serial.println (arrctr);
+
     String cmd = Serial.readStringUntil(' ');
     int str_len = cmd.length() + 1;
 
@@ -75,168 +86,202 @@ void loop() {
       int val = atoi(char_array);
       Serial.print("Read val raw: ");
       Serial.println(val);
+
       if(arrctr%2==0)xarr[arrctr/2] = val;
       else yarr[arrctr/2] = val;
       arrctr++;
+      digitsProcd++;
     }
+
     else if (cmd[0] == 'o'){
       yp = 0;
       xp = 0;
     }
   }
+
   if(arrctr  > 0){
     Serial.print("\n--- printing begins --- \n");
 
     // draw image fn
     for(int i = 0; i < arrctr/2 ; i++){
 
-      Serial.print("pt rd xarr ");
-      Serial.println(xarr[i]);
-      Serial.print("pt rd yarr ");
-      Serial.println(yarr[i]);
-      // at each point..
+      // Serial.print("pt rd xarr ");
+      // Serial.println(xarr[i]);
+      // Serial.print("pt rd yarr ");
+      // Serial.println(yarr[i]);
+      // // at each point..
       int dx = xarr[i] - xp;
       int dy = yarr[i] - yp;
 
 
-      Serial.print("before xpos ");
-      Serial.println(xp);
+      // Serial.print("before xpos ");
+      // Serial.println(xp);
 
-      Serial.print("before ypos ");
-      Serial.println(yp);
+      // Serial.print("before ypos ");
+      // Serial.println(yp);
 
-      Serial.print("dx ");
-      Serial.println(dx);
+      // Serial.print("dx ");
+      // Serial.println(dx);
 
-      Serial.print("dy ");
-      Serial.println(dy);
+      // Serial.print("dy ");
+      // Serial.println(dy);
 
-      if(dx*dx+dy*dy==0) continue; //samespot
-      // if((abs(dx) + abs(dy)) < 64) delay(50);
-      if(abs(dx) > 1024 || abs(dy) > 1024) 
-      { // some times we get extra 0 or digit for no reason, small baud doesn't change it...
-        Serial.println("ERROR!");
-        delay(100);
-        continue;
-      }
+      // if(dx*dx+dy*dy==0) continue; //samespot
+      // // if((abs(dx) + abs(dy)) < 64) delay(50);
+      // if(abs(dx) > 1024 || abs(dy) > 1024) 
+      // { // some times we get extra 0 or digit for no reason, small baud doesn't change it...
+      //   Serial.println("ERROR!");
+      //   delay(100);
+      //   continue;
+      // }
 
-      int xstep, ystep, xrem, yrem;
-      if(dx == 0){
-        xstep = 0;
-        ystep = dy;
-        xrem = 0;
-        yrem = 0;
+      // int xstep, ystep, xrem, yrem;
+      // if(dx == 0){
+      //   xstep = 0;
+      //   ystep = dy;
+      //   xrem = 0;
+      //   yrem = 0;
 
-        xp += xstep;
-        yp += ystep;
-        myStepper.step(xstep);
-        myStepperB.step(ystep);
-      }
-      else if(dy == 0){
-        xstep = dx;
-        ystep = 0;
-        xrem = 0;
-        yrem = 0;
+      //   xp += xstep;
+      //   yp += ystep;
+      //   myStepper.step(xstep);
+      //   myStepperB.step(ystep);
+      // }
+      // else if(dy == 0){
+      //   xstep = dx;
+      //   ystep = 0;
+      //   xrem = 0;
+      //   yrem = 0;
         
-        xp += xstep;
-        yp += ystep;
-        myStepper.step(xstep);
-        myStepperB.step(ystep);
-      }
-
-      else if(abs(dx) < abs(dy)){
-        xstep = abs(dx)/dx;
-        ystep = abs(dy/dx) * (dy/abs(dy)); //div by zero handled in case
-        xrem = 0;
-        yrem = dy % dx;
-        while(xp != xarr[i]){
-          yp+= ystep;
-          xp+= xstep;
-          myStepper.step(xstep);
-          myStepperB.step(ystep);
-        }
-        yp += yrem;
-        xp += xrem;
-        myStepper.step(xrem);
-        myStepperB.step(yrem);
-      }
-      else if (abs(dy) < abs(dx)){
-        xstep = abs(dx/dy) * (dx/abs(dx));
-        ystep = abs(dy)/dy;
-        xrem = dx%dy;
-        yrem = 0;
-        while(yp != yarr[i]){
-          yp += ystep;
-          xp += xstep;
-          myStepper.step(xstep);
-          myStepperB.step(ystep);
-        }
-        yp += yrem;
-        xp += xrem;
-        myStepper.step(xrem);
-        myStepperB.step(yrem);
-      }
-      
-      else if (abs(dy) == abs(dx)){
-        xstep = abs(dx)/dx;
-        ystep = abs(dy)/dy;
-        xrem = 0;
-        yrem = 0;
-        while(yp != yarr[i]){
-          yp+= ystep;
-          xp+= xstep;
-          myStepper.step(xstep);
-          myStepperB.step(ystep);
-        }
-        yp += yrem;
-        xp += xrem;
-        myStepper.step(xrem);
-        myStepperB.step(yrem);
-      }
-
-
-      Serial.print("after xpos ");
-      Serial.println(xp);
-
-      Serial.print("after ypos ");
-      Serial.println(yp);
-      // xp = xarr[i];
-      // yp = yarr[i];
-      Serial.println("\n---\n");
-
-      // int steps;
-
-      // if(abs(dx) > abs(dy)){
-      //   steps = abs(dx);
-      // }else{
-      //   steps = abs(dy);
+      //   xp += xstep;
+      //   yp += ystep;
+      //   myStepper.step(xstep);
+      //   myStepperB.step(ystep);
       // }
 
-      // Serial.print("steps ");
-      // Serial.println(steps);
+      // else if(abs(dx) < abs(dy)){
+      //   xstep = abs(dx)/dx;
+      //   ystep = abs(dy/dx) * (dy/abs(dy)); //div by zero handled in case
+      //   xrem = 0;
+      //   yrem = dy % dx;
+      //   while(xp != xarr[i]){
+      //     yp+= ystep;
+      //     xp+= xstep;
+      //     myStepper.step(xstep);
+      //     myStepperB.step(ystep);
+      //   }
+      //   yp += yrem;
+      //   xp += xrem;
+      //   myStepper.step(xrem);
+      //   myStepperB.step(yrem);
+      // }
+      // else if (abs(dy) < abs(dx)){
+      //   xstep = abs(dx/dy) * (dx/abs(dx));
+      //   ystep = abs(dy)/dy;
+      //   xrem = dx%dy;
+      //   yrem = 0;
+      //   while(yp != yarr[i]){
+      //     yp += ystep;
+      //     xp += xstep;
+      //     myStepper.step(xstep);
+      //     myStepperB.step(ystep);
+      //   }
+      //   yp += yrem;
+      //   xp += xrem;
+      //   myStepper.step(xrem);
+      //   myStepperB.step(yrem);
+      // }
+      
+      // else if (abs(dy) == abs(dx)){
+      //   xstep = abs(dx)/dx;
+      //   ystep = abs(dy)/dy;
+      //   xrem = 0;
+      //   yrem = 0;
+      //   while(yp != yarr[i]){
+      //     yp+= ystep;
+      //     xp+= xstep;
+      //     myStepper.step(xstep);
+      //     myStepperB.step(ystep);
+      //   }
+      //   yp += yrem;
+      //   xp += xrem;
+      //   myStepper.step(xrem);
+      //   myStepperB.step(yrem);
+      // }
+
+
+      // Serial.print("after xpos ");
+      // Serial.println(xp);
+
+      // Serial.print("after ypos ");
+      // Serial.println(yp);
+      // // xp = xarr[i];
+      // // yp = yarr[i];
+      // Serial.println("\n---\n");
+
+      int steps;
+      if (dx == 0) dx = 1;
+      if (dy == 0) dy = 1;
+
+
+      if(abs(dx) > abs(dy)){
+        steps = abs(dx);
+      }else{
+        steps = abs(dy);
+      }
+
+      Serial.print("steps ");
+      Serial.println(steps);
     
-      // int Xincrement = dx / steps;
-      // int Yincrement = dy / steps;
+      float Xincrement = dx / (float) steps;
+      float Yincrement = dy / (float) steps;
 
-      // Serial.print("xinc ");
-      // Serial.println(Xincrement);
+      Serial.print("xinc ");
+      Serial.println(Xincrement);
       
-      // Serial.print("yinc ");
-      // Serial.println(Yincrement);
+      Serial.print("yinc ");
+      Serial.println(Yincrement);
 
-      // Serial.print("\n---\n\n");
-      // for(int v=0; v < steps; v++)
-      // {
-      //   myStepper.step(-Xincrement);
-      //   myStepperB.step(-Yincrement);
-      // }
+
+
+      Serial.print("xpf ");
+      Serial.println(xp);
+      
+      Serial.print("ypf ");
+      Serial.println(yp);
+
+
+      for(int v=0; v < steps; v++)
+      {
+        xp += Xincrement;
+        yp += Yincrement;
+
+        if (xpint != round(xp)){
+          int real_x_delta = round(xp) - xpint;
+          myStepper.step(real_x_delta);
+          xpint += real_x_delta;
+        }
+
+        if(ypint != round(yp)){
+          int real_y_delta = round(yp) -ypint;
+          myStepperB.step(real_y_delta);
+          ypint += real_y_delta;
+        }
+      }
+      
+      Serial.print("xpint ");
+      Serial.println(xpint);
+      
+      Serial.print("ypint ");
+      Serial.println(ypint);
+      Serial.print("\n---\n\n");
     }
     arrctr = 0;
     // zero the array
-    for (int i = 0; i < 16384/2; i++){
-      xarr[i] = 0;
-      yarr[i] = 0;
-    }
+    // for (int i = 0; i < 16384/2; i++){
+    //   xarr[i] = 0;
+    //   yarr[i] = 0;
+    // }
   }
     //endwhile
   // buff += c;

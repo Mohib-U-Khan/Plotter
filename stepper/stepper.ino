@@ -29,16 +29,17 @@ const int stepsPerRevolution = 2048;  // change this to fit the number of steps 
 
 
 // initialize the stepper library
-Stepper myStepper(stepsPerRevolution, IN1A, IN3A, IN2A, IN4A);
-Stepper myStepperB(stepsPerRevolution, IN1B, IN3B, IN2B, IN4B);
+Stepper myStepperB(stepsPerRevolution, IN1A, IN3A, IN2A, IN4A);
+Stepper myStepper(stepsPerRevolution, IN1B, IN3B, IN2B, IN4B);
 
 void setup() {
   // set the speed at 5 rpm
-  myStepper.setSpeed(10);
-  myStepperB.setSpeed(10);
+  myStepper.setSpeed(15);
+  myStepperB.setSpeed(15);
   // initialize the serial port
+  Serial.setRxBufferSize(16384);
   Serial.setTimeout(1);
-  Serial.begin(115200);
+  Serial.begin(250000);
 }
 
 int ds = 10;
@@ -66,11 +67,11 @@ int digitsProcd = 0;
 void loop() {
   while (Serial.available() > 0) {
     
-    for(int i = 0 ; i < 10; i++){
-      Serial.println(">>>>>");
-    }
-    Serial.print(">>>>> >>>>> RENTER SERiAL AVAIL with arrctr");
-    Serial.println (arrctr);
+    // for(int i = 0 ; i < 10; i++){
+    //   Serial.println(">>>>>");
+    // }
+    // Serial.print(">>>>> >>>>> RENTER SERiAL AVAIL with arrctr");
+    // Serial.println (arrctr);
 
     String cmd = Serial.readStringUntil(' ');
     int str_len = cmd.length() + 1;
@@ -84,8 +85,8 @@ void loop() {
 
     if (isdigit(cmd[0])) {
       int val = atoi(char_array);
-      Serial.print("Read val raw: ");
-      Serial.println(val);
+      // Serial.print("Read val raw: ");
+      // Serial.println(val);
 
       if(arrctr%2==0)xarr[arrctr/2] = val;
       else yarr[arrctr/2] = val;
@@ -264,7 +265,7 @@ void loop() {
 
         if(ypint != round(yp)){
           int real_y_delta = round(yp) -ypint;
-          myStepperB.step(real_y_delta);
+          myStepperB.step(-real_y_delta); // turn in opposite direction
           ypint += real_y_delta;
         }
       }
